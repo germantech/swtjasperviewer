@@ -1,0 +1,26 @@
+# Output de classes
+*.class
+bin/
+
+# Configurações do Eclipse
+.metadata
+.settings/
+
+# Coisas do maven
+target/
+
+# Build
+build/
+
+# Arquivos de build do Java
+*.war
+*.ear
+*.jar
+
+# Cache de imagens do Ruindows
+Thumbs.db 
+
+# Folder config file
+Desktop.ini
+
+.DS_Store

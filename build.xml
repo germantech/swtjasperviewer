@@ -1,0 +1,148 @@
+<?xml version="1.0" ?>
+<project name="swtjasperviewer" default="lib" basedir=".">
+
+	<!-- Load local and user build preferences -->
+	<property file="${user.home}/build.properties" />
+	<property file="build.properties" />
+
+	<property name="project" value="SWTJasperViewer" />
+	<property name="project.shortname" value="swtjasperviewer" />
+	<property name="name" value="${project.shortname}-${version}" />
+	<property name="jar.name" value="${name}.jar" />
+	<property name="tgz.name" value="${name}.tar.gz" />
+
+	<property name="debug" value="on" />
+	<property name="build.compiler" value="modern" />
+	<property name="build.compiler.emacs" value="on" />
+
+	<property name="build.dir" value="build" />
+	<property name="build.classes" value="${build.dir}/classes" />
+	<property name="build.lib" value="${build.dir}/lib" />
+	<property name="build.dist" value="${build.dir}/dist" />
+	<property name="build.javadoc" value="${build.dist}/docs/api" />
+
+	<property name="lib.dir" value="lib" />
+	<property name="dist.dir" value="dist" />
+	<property name="src.dir" value="src" />
+
+	<path id="classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar" />
+			<include name="win32/*.jar" />
+		</fileset>
+	</path>
+
+	<target name="clean">
+		<delete dir="${build.dir}" />
+		<delete dir="${dist.dir}" />
+	</target>
+
+	<target name="compile" description="Compiles the classes">
+		<mkdir dir="${build.classes}" />
+
+		<javac srcdir="${src.dir}"
+		       destdir="${build.classes}"
+		       debug="${debug}"
+		       deprecation="off"
+		       target="1.4"
+		       bootclasspath="${jdk.home}/jre/lib/rt.jar">
+			<classpath refid="classpath" />
+		</javac>
+		<copy todir="${build.classes}">
+			<fileset dir="${src.dir}" defaultexcludes="true">
+				<exclude name="**/*.java" />
+				<exclude name="**/*.rej" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="lib" depends="compile">
+		<mkdir dir="${build.lib}" />
+
+		<jar jarfile="${build.lib}/${jar.name}" compress="true">
+			<fileset dir="${build.classes}" />
+			<manifest>
+				<section name="com/jasperassistant/designer/viewer">
+					<attribute name="Implementation-Title" value="${project}" />
+					<attribute name="Implementation-Version"
+					           value="${version}" />
+				</section>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="lib-en" depends="compile" description="Creates a jar file only with english language resources">
+		<mkdir dir="${build.lib}" />
+
+		<jar jarfile="${build.lib}/${jar.name}" compress="true">
+			<fileset dir="${build.classes}" excludes="**/messages_*.properties"/>
+			<manifest>
+				<section name="com/jasperassistant/designer/viewer">
+					<attribute name="Implementation-Title" value="${project}" />
+					<attribute name="Implementation-Version"
+					           value="${version}" />
+				</section>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="javadoc" depends="compile">
+		<mkdir dir="${build.javadoc}" />
+		<javadoc sourcepath="${src.dir}"
+		         destdir="${build.javadoc}"
+		         packagenames="*"
+		         classpathref="classpath">
+		</javadoc>
+	</target>
+
+	<target name="run" depends="compile">
+		<java classname="com.jasperassistant.designer.viewer.ViewerApp"
+		      fork="true">
+			<classpath refid="classpath" />
+			<classpath path="${build.classes}" />
+
+			<arg line="-Fdemo/HyperlinkReport.jrprint" />
+			<sysproperty key="java.library.path" value="${lib.dir}/win32" />
+		</java>
+	</target>
+
+	<target name="dist-prepare" depends="lib, javadoc">
+		<mkdir dir="${build.dist}" />
+		<copy file="${build.lib}/${jar.name}" todir="${build.dist}" />
+		<copy todir="${build.dir}">
+			<fileset dir="." includes="demo.bat, demo.sh" />
+			<filterset>
+				<filter token="version" value="${version}" />
+				<filter token="jrVersion" value="${jrVersion}" />
+			</filterset>
+		</copy>
+		<fixcrlf srcdir="${build.dir}"
+		         includes="demo.sh"
+		         destdir="${build.dist}"
+		         eol="unix" />
+		<fixcrlf srcdir="${build.dir}"
+		         includes="demo.bat"
+		         destdir="${build.dist}"
+		         eol="dos" />
+		<copy todir="${build.dist}">
+			<fileset dir="." includes="demo/**/*.jrprint" />
+			<fileset dir="." includes="src/**/*" />
+			<fileset dir="." includes="${lib.dir}/**/*" />
+			<fileset dir="."
+			         includes="build.xml, build.properties, .project, .classpath, LGPL.txt, README.txt" />
+		</copy>
+	</target>
+
+	<target name="dist" depends="dist-prepare">
+		<tar destfile="${build.dir}/${tgz.name}" compression="gzip">
+			<tarfileset dir="${build.dist}"
+			            includes="**/*"
+			            excludes="demo.sh"
+			            prefix="${name}" />
+			<tarfileset dir="${build.dist}"
+			            includes="demo.sh"
+			            prefix="${name}"
+			            mode="755" />
+		</tar>
+	</target>
+</project>
